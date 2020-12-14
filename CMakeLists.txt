@@ -490,6 +490,7 @@ add_library (seastar STATIC
   include/seastar/core/scollectd_api.hh
   include/seastar/core/seastar.hh
   include/seastar/core/semaphore.hh
+  include/seastar/core/semaphore_task_map.hh
   include/seastar/core/sharded.hh
   include/seastar/core/shared_future.hh
   include/seastar/core/shared_mutex.hh
@@ -620,6 +621,7 @@ add_library (seastar STATIC
   src/core/prometheus.cc
   src/core/reactor.cc
   src/core/resource.cc
+  src/core/semaphore_task_map.cc
   src/core/sharded.cc
   src/core/scollectd.cc
   src/core/scollectd-impl.hh

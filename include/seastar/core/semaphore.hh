@@ -28,6 +28,10 @@
 #include <seastar/core/timer.hh>
 #include <seastar/core/expiring_fifo.hh>
 
+#ifdef SEASTAR_DEADLOCK_DETECTION
+#include <seastar/core/semaphore_task_map.hh>
+#endif
+
 namespace seastar {
 
 /// \addtogroup fiber-module
@@ -135,6 +139,9 @@ private:
         expiry_handler() = default;
         expiry_handler(exception_factory&& f) : exception_factory(std::move(f)) { }
         void operator()(entry& e) noexcept {
+            #ifdef SEASTAR_DEADLOCK_DETECTION
+                internal::get_task_semaphore_map().delete(this, e.pr._task);
+            #endif
             e.pr.set_exception(exception_factory::timeout());
         }
     };
@@ -192,6 +199,7 @@ public:
         if (_ex) {
             return make_exception_future(_ex);
         }
+
         entry e(promise<>(), nr);
         auto fut = e.pr.get_future();
         try {
@@ -199,6 +207,11 @@ public:
         } catch (...) {
             e.pr.set_exception(std::current_exception());
         }
+
+        #ifdef SEASTAR_DEADLOCK_DETECTION
+        internal::get_task_semaphore_map().add(this, e.pr._task);
+        #endif
+
         return fut;
     }
 
@@ -236,6 +249,9 @@ public:
             auto& x = _wait_list.front();
             _count -= x.nr;
             x.pr.set_value();
+            #ifdef SEASTAR_DEADLOCK_DETECTION
+            internal::get_task_semaphore_map().delete(this, x.pr._task);
+            #endif
             _wait_list.pop_front();
         }
     }
